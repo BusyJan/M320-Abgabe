@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"Alle Klassen und Schnittstellen","u":"allclasses-index.html"},{"p":"<Unnamed>","l":"Task"},{"p":"<Unnamed>","l":"TaskManager"},{"p":"<Unnamed>","l":"TaskManagerDemo"}];updateSearchResults();
