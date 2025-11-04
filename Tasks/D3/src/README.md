@@ -1,9 +1,17 @@
 # ☀️ Weather Forecast App – Kompetenznachweis D3
 
 ## 🧭 Beschreibung
-Diese Java-Applikation ruft aktuelle Wetterdaten über die **Open-Meteo-API** ab.  
-Der Benutzer gibt eine Stadt ein, und das Programm zeigt die aktuelle Temperatur und Windgeschwindigkeit an.  
-Die Anwendung demonstriert **Delegation**, **Benutzer-Input-Validierung**, **Exception-Handling** und eine klare **Schichtentrennung**.
+Diese Java-Applikation ruft **Echtzeit-Wetterdaten** über die **Open-Meteo-API** ab.  
+Der Benutzer gibt eine **beliebige Stadt** ein, und das Programm zeigt:
+- Aktuelle Temperatur
+- Windgeschwindigkeit  
+- Wetterbeschreibung (z.B. "Klarer Himmel", "Regen", "Gewitter")
+
+Die Anwendung demonstriert **Delegation**, **Benutzer-Input-Validierung**, **Exception-Handling**, **externe API-Integration** und eine klare **Schichtentrennung**.
+
+**NEU:** Die App verwendet jetzt 2 APIs in Echtzeit:
+1. **Geocoding API** - Wandelt Stadtnamen in Koordinaten um
+2. **Weather API** - Ruft Wetterdaten für die Koordinaten ab
 
 ---
 
@@ -65,40 +73,82 @@ Copy code
 
 ## 💻 Beispielausgabe
 
-Enter city name: Zürich
-Aktuelles Wetter in Zürich:
-Temperatur: 5.2°C
-Wind: 4.8 km/h
+**Erfolgreiche Abfrage:**
+```
+Enter city name: London
 
-yaml
-Copy code
+╔════════════════════════════════════════════════════════════╗
+║                    WETTER-DATEN                            ║
+╠════════════════════════════════════════════════════════════╣
+║  Stadt:         London                                     ║
+║  Temperatur:    8.5°C                                      ║
+║  Wind:          12.3 km/h                                  ║
+║  Beschreibung:  Teilweise bewölkt                          ║
+╚════════════════════════════════════════════════════════════╝
+```
 
-Wenn der Benutzer keine Eingabe macht:
-
+**Ungültige Eingabe:**
+```
 Enter city name:
 Error: Stadt darf nicht leer sein.
+```
 
-yaml
-Copy code
+**Stadt nicht gefunden:**
+```
+Enter city name: asdfgh
+
+>>> FEHLER: Wetterdaten konnten nicht abgerufen werden.
+>>> Details: Stadt 'asdfgh' nicht gefunden! <<<
+```
 
 ---
 
 ## 🧠 Technische Umsetzung
 
 - **Programmiersprache:** Java (Version 17 oder höher)
-- **API:** [Open-Meteo Weather API](https://open-meteo.com)
-- **Netzwerkzugriff:** `java.net.URL` und `Scanner`
-- **Datenverarbeitung:** String-Manipulation (kein externes JSON-Framework)
+- **APIs:** 
+  - [Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api) - Stadt → Koordinaten
+  - [Open-Meteo Weather API](https://open-meteo.com) - Koordinaten → Wetterdaten
+- **Netzwerkzugriff:** `java.net.URL` und `Scanner` (Zeilen 166-177 in WeatherService.java)
+- **Datenverarbeitung:** String-Manipulation und JSON-Parsing ohne externe Libraries
 - **Exception Handling:** eigene Klasse `InvalidInputException`
+- **WMO Weather Codes:** Konvertierung in deutsche Beschreibungen (Zeilen 186-214)
+
+### API-Ablauf:
+```
+User gibt "Berlin" ein
+    ↓
+1. Geocoding API: "Berlin" → Lat: 52.52, Lon: 13.41
+    ↓
+2. Weather API: Lat/Lon → Temperatur, Wind, Wettercode
+    ↓
+3. Wettercode → "Klarer Himmel" (deutsche Beschreibung)
+    ↓
+Ausgabe an User
+```
 
 ---
 
 ## 🪞 Reflexion
 
 Ich habe gelernt, wie man eine Applikation in logische Schichten trennt und mit Delegation arbeitet.  
-Ich verstehe, wie die Trennung zwischen Benutzer-Eingabe, Logik und Service-Aufrufen den Code übersichtlicher macht.  
-Herausfordernd war das Parsen der API-Antwort, da JSON ohne Library etwas umständlich ist.  
-Beim nächsten Mal würde ich eine JSON-Library wie `org.json` oder `GSON` einbinden, um den Code sauberer zu gestalten.
+Ich verstehe, wie die Trennung zwischen Benutzer-Eingabe, Logik und Service-Aufrufen den Code übersichtlicher macht.
+
+**Neu hinzugefügt:**
+- **Dynamische Stadt-Suche** - Jede beliebige Stadt weltweit kann abgefragt werden
+- **Geocoding Integration** - Stadt wird automatisch in Koordinaten umgewandelt
+- **WMO Weather Codes** - 20+ verschiedene Wetterbeschreibungen auf Deutsch
+- **Verbesserte Fehlerbehandlung** - Stadt nicht gefunden vs. Netzwerkfehler
+
+**Herausforderungen:**
+- Das Parsen von JSON ohne Library ist umständlich, funktioniert aber mit String-Splitting
+- Fehlerbehandlung bei mehreren API-Aufrufen erfordert präzises Exception Handling
+- URL-Encoding für Städtenamen mit Sonderzeichen (z.B. "São Paulo")
+
+**Verbesserungspotenzial:**
+- JSON-Library wie `org.json` oder `GSON` würde den Code robuster machen
+- Caching der Geocoding-Ergebnisse für häufig gesuchte Städte
+- Mehr Wetterdaten (Luftfeuchtigkeit, Luftdruck, Niederschlag)
 
 ---
 
@@ -114,5 +164,30 @@ Beim nächsten Mal würde ich eine JSON-Library wie `org.json` oder `GSON` einbi
 
 ---
 
-© 2025 – Denis  
-**Kompetenznachweis D3 – Softwareentwicklung mit Delegation und API-Axnbindung**
+## 🔧 Code-Referenzen
+
+### Delegation
+- **Main → Controller:** `Main.java` Zeile 7
+- **Controller → Service:** `WeatherController.java` (ruft `weatherService.showWeather()` auf)
+- **Service → API:** `WeatherService.java` Zeilen 72-105 (Geocoding), Zeilen 117-157 (Weather)
+
+### API-Integration
+- **Geocoding API-Aufruf:** `WeatherService.java` Zeilen 72-105
+- **Weather API-Aufruf:** `WeatherService.java` Zeilen 117-157
+- **HTTP Request Methode:** `WeatherService.java` Zeilen 166-177
+- **JSON Parsing:** `WeatherService.java` Zeilen 90-104, 133-156
+
+### Exception Handling
+- **InvalidInputException Definition:** `exception/InvalidInputException.java`
+- **Stadt nicht gefunden:** `WeatherService.java` Zeile 57
+- **Parsing-Fehler:** `WeatherService.java` Zeilen 102-104, 154-156
+
+### Validierung
+- **Input-Validierung:** `util/InputValidator.java`
+- **Exception wird geworfen:** `InputValidator.java` (bei leerem/ungültigem Input)
+- **Exception wird gefangen:** `controller/WeatherController.java` (in try-catch Block)
+
+---
+
+© 2025 – Jan Ludwig  
+**Kompetenznachweis D3 – Softwareentwicklung mit Delegation und Echtzeit-API-Anbindung**
